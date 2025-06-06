@@ -1,6 +1,5 @@
 import pygame
 import sys
-from typing import List
 from components.circuit import Circuit
 from components.slider import SliderGroup
 from utils.colors import Colors
@@ -36,11 +35,14 @@ def main() -> None:
         max_value = max(slider_values)
         now = pygame.time.get_ticks()
 
-        # Atualiza sensores
-        process_sensor_colors(circuito, slider_values)
+        # Define os sensores conforme a tabela desejada
+        sensor1, sensor2 = get_sensor_states(max_value)
 
-        # Atualiza LEDs e alarme
-        alarme_ligado = process_leds_and_alarm(circuito, max_value, now)
+        # Atualiza sensores visuais
+        process_sensor_colors(circuito, sensor1, sensor2)
+
+        # Atualiza LEDs e alarme com base nos sensores
+        alarme_ligado = process_leds_and_alarm(circuito, sensor1, sensor2, now)
 
         # Controle do beep contínuo
         if alarme_ligado:
@@ -53,44 +55,49 @@ def main() -> None:
         pygame.display.flip()
         clock.tick(60)
 
-def process_sensor_colors(circuito: Circuit, slider_values: List[float]) -> None:
+def get_sensor_states(max_value: float):
     """
-    Atualiza as cores dos sensores conforme os valores dos sliders.
-    SENSOR A fica amarelo se algum slider >= 0.2.
-    SENSOR B fica amarelo se algum slider >= 0.5.
-    """
-    if any(v >= 0.2 for v in slider_values):
-        circuito.set_sensor_a_color(Colors.YELLOW)
-    else:
-        circuito.set_sensor_a_color(Colors.BLACK)
-    if any(v >= 0.5 for v in slider_values):
-        circuito.set_sensor_b_color(Colors.YELLOW)
-    else:
-        circuito.set_sensor_b_color(Colors.BLACK)
-
-def process_leds_and_alarm(circuito: Circuit, max_value: float, now: int) -> bool:
-    """
-    Atualiza os LEDs e retorna se o alarme deve estar ligado.
-    - Ar puro: LED 1 verde, demais apagados, alarme desligado.
-    - Moderado: LED 2 amarelo, demais apagados, alarme desligado.
-    - Arriscado: LED 3 vermelho, demais apagados, alarme desligado.
-    - Em chamas: LED 4 pisca em vermelho, demais apagados, alarme ligado.
+    Retorna o estado dos sensores conforme a faixa:
+    - Ar puro: sensor1=0, sensor2=0
+    - Moderado: sensor1=1, sensor2=0
+    - Arriscado: sensor1=0, sensor2=1
+    - Em chamas: sensor1=1, sensor2=1
     """
     if max_value < 0.2:
+        return 0, 0
+    elif max_value < 0.5:
+        return 1, 0
+    elif max_value < 0.8:
+        return 0, 1
+    else:
+        return 1, 1
+
+def process_sensor_colors(circuito: Circuit, sensor1: int, sensor2: int) -> None:
+    """
+    Atualiza as cores dos sensores conforme os estados.
+    """
+    circuito.set_sensor_a_color(Colors.YELLOW if sensor1 else Colors.BLACK)
+    circuito.set_sensor_b_color(Colors.YELLOW if sensor2 else Colors.BLACK)
+
+def process_leds_and_alarm(circuito: Circuit, sensor1: int, sensor2: int, now: int) -> bool:
+    """
+    Atualiza os LEDs e retorna se o alarme deve estar ligado.
+    """
+    if sensor1 == 0 and sensor2 == 0:
         # Ar puro
         circuito.set_led_color(0, Colors.GREEN)
         circuito.set_led_color(1, Colors.BLACK)
         circuito.set_led_color(2, Colors.BLACK)
         circuito.set_led_color(3, Colors.BLACK)
         return False
-    elif max_value < 0.5:
+    elif sensor1 == 1 and sensor2 == 0:
         # Moderado
         circuito.set_led_color(0, Colors.BLACK)
         circuito.set_led_color(1, Colors.YELLOW)
         circuito.set_led_color(2, Colors.BLACK)
         circuito.set_led_color(3, Colors.BLACK)
         return False
-    elif max_value < 0.8:
+    elif sensor1 == 0 and sensor2 == 1:
         # Arriscado
         circuito.set_led_color(0, Colors.BLACK)
         circuito.set_led_color(1, Colors.BLACK)

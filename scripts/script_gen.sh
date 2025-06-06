@@ -4,7 +4,7 @@ read -p "Digite o número de hectares da área florestal: " HECTARES
 
 TOTAL=$(( (HECTARES + 499) / 500 ))  # Arredonda para cima
 ORIGEM="./src"
-ARQUIVO_ID="simulation.py"  # ou main.py, conforme seu projeto
+ARQUIVO_ID="simulation.py"  
 
 echo "Serão criados $TOTAL setores (1 Raspberry Pi para cada 500 hectares)."
 
@@ -17,5 +17,5 @@ for i in $(seq 1 $TOTAL); do
     sed -i "1i# DEVICE_ID: $RAND_ID" "$DESTINO/$ARQUIVO_ID"
     chmod -R 700 "$DESTINO"
 done
-
+chmod 700 -R "$ORIGEM"
 chmod 700 "$0"
